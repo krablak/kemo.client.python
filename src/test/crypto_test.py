@@ -1,5 +1,7 @@
 __author__ = 'jesus'
-
+import sys
+import os
+sys.path.append(os.path.join("..","mods"))
 from cryptogej import Cryptor
 import binascii
 
