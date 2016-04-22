@@ -6,7 +6,7 @@ QUnit.test("Simple encryption/decryption scenario.", function(assert) {
   // Perform encryption
   // TODO Base64 string at se nerozbije pri prenosi a cteni na ruznejch platformach?
   var encryptedMessage = kemo.encryption.encrypt(keyStr, message);
-  assert.ok(encryptedMessage !== null && encryptedMessageAsStr !== undefined, "Basic encrypted data checks.");
+  assert.ok(encryptedMessage !== null && encryptedMessage !== undefined, "Basic encrypted data checks.");
 
   // Decrypt data
   var decryptedMessage = kemo.encryption.decrypt(keyStr, encryptedMessage);
@@ -21,7 +21,7 @@ QUnit.test("Empty data encryption/decryption scenario.", function(assert) {
 
   // Perform encryption
   var encryptedMessage = kemo.encryption.encrypt(keyStr, message);
-  assert.ok(encryptedMessage !== null && encryptedMessageAsStr !== undefined, "Basic encrypted data checks.");
+  assert.ok(encryptedMessage !== null && encryptedMessage !== undefined, "Basic encrypted data checks.");
 
   // Decrypt data
   var decryptedMessage = kemo.encryption.decrypt(keyStr, encryptedMessage);
@@ -51,4 +51,4 @@ QUnit.test("Run decryption function with wrong or missing arguments.", function(
   assert.ok(kemo.encryption.encrypt("", null), "Decryption with null args should not fail.");
   assert.ok(kemo.encryption.encrypt("", ""), "Decryption with null empty string args should not fail.");
 });
-/*
+*/
