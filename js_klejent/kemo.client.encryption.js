@@ -1,36 +1,98 @@
 var kemo = function(kemo) {
-  kemo.encryption = kemo.encryption || {};
+	kemo.encryption = kemo.encryption || {};
 
-  var toBytes = function(str) {
-    var bytes = [];
-    if (str) {
-      for (var i = 0; i < str.length; ++i) {
-        bytes.push(str.charCodeAt(i));
-      }
-    }
-    return bytes;
-  };
+	/**
+	 * Encryption module configuration.
+	 */
+	kemo.encryption.config = {
+		ALGORITHM : 'AES-CFB',
+		ENCODING : 'utf8',
+		IV_SIZE : 16
+	};
 
-  kemo.encryption.encrypt = function(key, message) {
-    var key_sha256 = CryptoJS.SHA256(key).toString();
-    var key_hex = CryptoJS.enc.Hex.parse(key_sha256);
-    var iv = CryptoJS.lib.WordArray.random(16);
-    var encrypted = CryptoJS.AES.encrypt(message, key_hex, {iv: iv,  mode: CryptoJS.mode.CFB});
-    return CryptoJS.enc.Hex.stringify(iv)+encrypted;
-  };
+	// Helper function for asserting function arguments.
+	var assertString = function(name, value) {
+		var name = name ? name : "undefined";
+		if (value === undefined || value === null) {
+			throw "Required argument '" + name + "' is missing.";
+		}
+		if (typeof (value) !== "string") {
+			throw "Required argument '" + value + "' is not type of string.";
+		}
+	};
 
-  kemo.encryption.decrypt = function(key, ivciphertext) {
-    var key_sha256 = CryptoJS.SHA256(key).toString();
-    var key_hex = CryptoJS.enc.Hex.parse(key_sha256);
-    var iv = ivciphertext.substring(0,32);
-    var iv = CryptoJS.enc.Hex.parse(iv);
-    var ciphertext = ivciphertext.substring(32);
-    var cipher = CryptoJS.lib.CipherParams.create({
-            ciphertext: CryptoJS.enc.Base64.parse(ciphertext)
-        });
-    var result = CryptoJS.AES.decrypt(cipher, key_hex, {iv: iv, mode: CryptoJS.mode.CFB});
-    return result.toString(CryptoJS.enc.Utf8);
-  };
+	// Unified way of key bytes creation
+	var toKeyBytes = function(keyStr) {
+		return forge.md.sha256.create().update(keyStr).digest().getBytes();
+	}
 
-  return kemo;
+	/**
+	 * Encrypts given message using provided key.
+	 * 
+	 * @param key
+	 *            string with encryption key.
+	 * 
+	 * @param message
+	 *            message as string to be encrypted.
+	 * 
+	 * @returns encrypted message as base64 string with first 16 bytes
+	 *          representing initialization vector.
+	 */
+	kemo.encryption.encrypt = function(key, message) {
+		assertString('key', key);
+		assertString('message', message);
+		// Generate random IV
+		var iv = forge.random.getBytesSync(kemo.encryption.config.IV_SIZE);
+		// Prepare encryption component
+		var cipher = forge.cipher.createCipher(kemo.encryption.config.ALGORITHM, toKeyBytes(key));
+		cipher.start({
+			iv : iv
+		});
+		cipher.update(forge.util.createBuffer(message, kemo.encryption.config.ENCODING));
+		// Get encrypted result
+		var encrMessageBytes = cipher.output.getBytes();
+		// Cleanup encryption component
+		cipher.finish();
+		// Create single Base64 encryption result from IV and encrypted message
+		return forge.util.encode64(iv + encrMessageBytes);
+	};
+
+	/**
+	 * Decrypts given encrypted data.
+	 * 
+	 * @param key
+	 *            string with encryption key.
+	 * @param encryptedStr
+	 *            encrypted data as base64 string.
+	 * @returns decrypted message as string.
+	 */
+	kemo.encryption.decrypt = function(key, encryptedStr) {
+		assertString('key', key);
+		assertString('encryptedStr', encryptedStr);
+		// Decode message from base64
+		var encryptedBytes = forge.util.decode64(encryptedStr);
+		// First 16 bytes are IV
+		var iv = encryptedBytes.slice(0, kemo.encryption.config.IV_SIZE);
+		// Rest of encrypted content represents message content
+		var encryptedData = forge.util.createBuffer(encryptedBytes.slice(kemo.encryption.config.IV_SIZE));
+		// Prepare decryption component
+		var decipher = forge.cipher.createDecipher(kemo.encryption.config.ALGORITHM, toKeyBytes(key));
+		decipher.start({
+			iv : iv
+		});
+		decipher.update(encryptedData);
+		// Get decryption result
+		var decryptedBytes = decipher.output.getBytes();
+		// Cleanup decryption component
+		decipher.finish();
+		return decryptedBytes;
+	};
+
+	// Support function to create communication address from key
+	kemo.encryption.keyToAddress = function(key) {
+		var keyStr = key ? "littlebitof" + key + "salt" : "defaultkey";
+		return encodeURIComponent(forge.util.encode64(forge.md.sha256.create().update(keyStr).digest().getBytes()));
+	};
+
+	return kemo;
 }(kemo || {});
