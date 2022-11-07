@@ -1,3 +1,4 @@
+# [REPO BACKUP] 
 ```
  _                                           _        
 | | _____ _ __ ___   ___      _ __ ___   ___| | _____ 
@@ -13,7 +14,7 @@
 
 ### Install ###
 
-Easy as a fuck:
+Easy as a duck:
 
 ```
 virtualenv env
